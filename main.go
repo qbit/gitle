@@ -21,12 +21,10 @@ func envOr(name string, def string) string {
 
 func main() {
 	repos := envOr("GITLE_REPOS", "/var/gitle/repos")
-	keys := envOr("GITLE_KEYS", "/var/gitle/keys")
 	akSrc := envOr("GITLE_AUTH_KEYS", "var/gitle/authorized_keys")
-	hostKey := envOr("GITLE_HOST_KEY", "/var/gitle/key")
+	hostKey := envOr("GITLE_HOST_KEY", "/var/gitle/host_key")
 
 	protect.Unveil(repos, "rwc")
-	protect.Unveil(keys, "r")
 	protect.Unveil(akSrc, "r")
 	protect.Unveil(hostKey, "r")
 	protect.Unveil("/dev", "r")
@@ -36,7 +34,6 @@ func main() {
 
 	server := gitkit.NewSSH(gitkit.Config{
 		Dir:        repos,
-		KeyDir:     keys,
 		AutoCreate: true,
 	})
 
