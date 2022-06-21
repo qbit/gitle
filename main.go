@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"suah.dev/protect"
 
-	"github.com/sosedoff/gitkit"
+	"suah.dev/protect"
+	"suah.dev/gitkit"
 )
 
 func envOr(name string, def string) string {
