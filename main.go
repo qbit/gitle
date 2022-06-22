@@ -21,7 +21,7 @@ func envOr(name string, def string) string {
 
 func main() {
 	repos := envOr("GITLE_REPOS", "/var/gitle/repos")
-	akSrc := envOr("GITLE_AUTH_KEYS", "var/gitle/authorized_keys")
+	akSrc := envOr("GITLE_AUTH_KEYS", "/var/gitle/authorized_keys")
 	hostKey := envOr("GITLE_HOST_KEY", "/var/gitle/host_key")
 	port := envOr("GITLE_PORT", ":2222")
 
