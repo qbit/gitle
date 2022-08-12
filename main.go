@@ -1,14 +1,17 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
-	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"log"
 	"os"
 
-	"suah.dev/protect"
+	"golang.org/x/crypto/ssh"
+
 	"suah.dev/gitkit"
+	"suah.dev/protect"
 )
 
 func envOr(name string, def string) string {
@@ -23,6 +26,7 @@ func main() {
 	repos := envOr("GITLE_REPOS", "/var/gitle/repos")
 	akSrc := envOr("GITLE_AUTH_KEYS", "/var/gitle/authorized_keys")
 	hostKey := envOr("GITLE_HOST_KEY", "/var/gitle/host_key")
+	faFPs := envOr("GITLE_FULL_ACCESS_FINGREPRINTS", "/var/gitle/full_access_fingreprints")
 	port := envOr("GITLE_PORT", ":2222")
 
 	protect.Unveil(repos, "rwc")
@@ -37,6 +41,17 @@ func main() {
 		Dir:        repos,
 		AutoCreate: true,
 	})
+
+	fa, err := ioutil.ReadFile(faFPs)
+	if err != nil {
+		log.Fatalf("can't load full_access_fingreprints file: %s, err: %v", faFPs, err)
+	}
+	fpMap := map[string]bool{}
+	scanner := bufio.NewScanner(bytes.NewReader(fa))
+	for scanner.Scan() {
+		fp := scanner.Text()
+		fpMap[fp] = true
+	}
 
 	akb, err := ioutil.ReadFile(akSrc)
 	if err != nil {
@@ -67,9 +82,18 @@ func main() {
 		ServerVersion: "SSH-2.0-gitle",
 		PublicKeyCallback: func(conn ssh.ConnMetadata, pubKey ssh.PublicKey) (*ssh.Permissions, error) {
 			if akMap[string(pubKey.Marshal())] {
+				fp := ssh.FingerprintSHA256(pubKey)
+				isRO := "yes"
+				if fpMap[fp] {
+					isRO = "no"
+				}
 				return &ssh.Permissions{
 					Extensions: map[string]string{
-						"pubkey-fp": ssh.FingerprintSHA256(pubKey),
+						"pubkey-fp": fp,
+						"key-id":    fp,
+					},
+					CriticalOptions: map[string]string{
+						"is-ro": isRO,
 					},
 				}, nil
 			}
