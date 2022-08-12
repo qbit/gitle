@@ -31,6 +31,7 @@ func main() {
 
 	protect.Unveil(repos, "rwc")
 	protect.Unveil(akSrc, "r")
+	protect.Unveil(faFPs, "r")
 	protect.Unveil(hostKey, "r")
 	protect.Unveil("/dev", "r")
 	protect.Unveil("/dev/null", "rw")
