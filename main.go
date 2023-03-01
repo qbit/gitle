@@ -9,8 +9,9 @@ import (
 	"os"
 
 	"golang.org/x/crypto/ssh"
+	"tailscale.com/tsnet"
 
-	"suah.dev/gitkit"
+	"github.com/sosedoff/gitkit"
 	"suah.dev/protect"
 )
 
@@ -23,11 +24,12 @@ func envOr(name string, def string) string {
 }
 
 func main() {
-	repos := envOr("GITLE_REPOS", "/var/gitle/repos")
 	akSrc := envOr("GITLE_AUTH_KEYS", "/var/gitle/authorized_keys")
-	hostKey := envOr("GITLE_HOST_KEY", "/var/gitle/host_key")
 	faFPs := envOr("GITLE_FULL_ACCESS_FINGREPRINTS", "/var/gitle/full_access_fingreprints")
-	port := envOr("GITLE_PORT", ":2222")
+	hostKey := envOr("GITLE_HOST_KEY", "/var/gitle/host_key")
+	name := envOr("GITLE_NAME", "gitle")
+	port := envOr("GITLE_PORT", ":22")
+	repos := envOr("GITLE_REPOS", "/var/gitle/repos")
 
 	protect.Unveil(repos, "rwc")
 	protect.Unveil(akSrc, "r")
@@ -42,6 +44,15 @@ func main() {
 		Dir:        repos,
 		AutoCreate: true,
 	})
+
+	tsServer := &tsnet.Server{
+		Hostname: name,
+	}
+
+	ln, err := tsServer.Listen("tcp", port)
+	if err != nil {
+		log.Fatal("can't listen: ", err)
+	}
 
 	fa, err := ioutil.ReadFile(faFPs)
 	if err != nil {
@@ -79,7 +90,7 @@ func main() {
 		log.Fatalf("failed to parse %s: %v", hostKey, err)
 	}
 
-	server.SSHConfig = &ssh.ServerConfig{
+	sshConfig := &ssh.ServerConfig{
 		ServerVersion: "SSH-2.0-gitle",
 		PublicKeyCallback: func(conn ssh.ConnMetadata, pubKey ssh.PublicKey) (*ssh.Permissions, error) {
 			if akMap[string(pubKey.Marshal())] {
@@ -101,10 +112,12 @@ func main() {
 			return nil, fmt.Errorf("unknown public key for %q", conn.User())
 		},
 	}
-	server.SSHConfig.AddHostKey(pk)
-	server.SetupDone = true
 
-	err = server.ListenAndServe(port)
+	sshConfig.AddHostKey(pk)
+	server.SetSSHConfig(sshConfig)
+	server.SetListener(ln)
+
+	err = server.Serve()
 	if err != nil {
 		log.Fatalf("failed to listen: %v\n", err)
 	}
