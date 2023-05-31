@@ -8,11 +8,10 @@ import (
 	"log"
 	"os"
 
-	"golang.org/x/crypto/ssh"
-	"tailscale.com/tsnet"
-
 	"github.com/sosedoff/gitkit"
+	"golang.org/x/crypto/ssh"
 	"suah.dev/protect"
+	"tailscale.com/tsnet"
 )
 
 func envOr(name string, def string) string {
@@ -23,14 +22,31 @@ func envOr(name string, def string) string {
 	return s
 }
 
-func main() {
-	akSrc := envOr("GITLE_AUTH_KEYS", "/var/gitle/authorized_keys")
-	faFPs := envOr("GITLE_FULL_ACCESS_FINGREPRINTS", "/var/gitle/full_access_fingreprints")
-	hostKey := envOr("GITLE_HOST_KEY", "/var/gitle/host_key")
-	name := envOr("GITLE_NAME", "gitle")
-	port := envOr("GITLE_PORT", ":22")
-	repos := envOr("GITLE_REPOS", "/var/gitle/repos")
+var (
+	akSrc   string
+	faFPs   string
+	hostKey string
+	name    string
+	port    string
+	repos   string
+	home    string
+)
 
+func init() {
+	akSrc = envOr("GITLE_AUTH_KEYS", "/var/gitle/authorized_keys")
+	faFPs = envOr("GITLE_FULL_ACCESS_FINGREPRINTS", "/var/gitle/full_access_fingerprints")
+	hostKey = envOr("GITLE_HOST_KEY", "/var/gitle/host_key")
+	name = envOr("GITLE_NAME", "gitle")
+	port = envOr("GITLE_PORT", ":22")
+	repos = envOr("GITLE_REPOS", "/var/gitle/repos")
+	home = envOr("GITLE_HOME", "/var/gitle")
+
+	os.Setenv("HOME", home)
+}
+
+func main() {
+
+	protect.Unveil(home, "rwc")
 	protect.Unveil(repos, "rwc")
 	protect.Unveil(akSrc, "r")
 	protect.Unveil(faFPs, "r")
@@ -46,7 +62,9 @@ func main() {
 	})
 
 	tsServer := &tsnet.Server{
+		Dir:      home,
 		Hostname: name,
+		AuthKey:  envOr("TS_AUTH_TOKEN", ""),
 	}
 
 	ln, err := tsServer.Listen("tcp", port)
