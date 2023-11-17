@@ -18,10 +18,10 @@
         in {
           gitle = pkgs.buildGoModule {
             pname = "gitle";
-            version = "v1.0.0";
+            version = "v1.0.1";
             src = ./.;
 
-            vendorHash = "sha256-0YWjtvlvzIaa/ivhk9R1guf7Q9flqStKcj+qt15orLk=";
+            vendorHash = "sha256-WeyZh0bUXx+bzD/ymR1ER1H/nyUJH2m0Dzp21yUDFG0=";
           };
         });
 
