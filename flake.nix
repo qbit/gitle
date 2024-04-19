@@ -9,7 +9,8 @@
         [ "x86_64-linux" "x86_64-darwin" "aarch64-linux" "aarch64-darwin" ];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
       nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; });
-    in {
+    in
+    {
       overlay = final: prev: {
         inherit (self.packages.${prev.system}) gitle;
       };
@@ -18,10 +19,10 @@
         in {
           gitle = pkgs.buildGoModule {
             pname = "gitle";
-            version = "v1.0.1";
+            version = "v1.0.2";
             src = ./.;
 
-            vendorHash = "sha256-WeyZh0bUXx+bzD/ymR1ER1H/nyUJH2m0Dzp21yUDFG0=";
+            vendorHash = "sha256-6ZrOe2U/YanW9mDRuj9npaYbof0TuzXg11lT3k/Kx7w=";
           };
         });
 
@@ -34,9 +35,13 @@
               PS1='\u@\h:\@; '
               echo "Go `${pkgs.go}/bin/go version`"
             '';
-            nativeBuildInputs = with pkgs; [ git go gopls go-tools ];
+            nativeBuildInputs = with pkgs; [
+              git
+              go
+              gopls
+              go-tools
+            ];
           };
         });
     };
 }
-
