@@ -17,9 +17,9 @@
       packages = forAllSystems (system:
         let pkgs = nixpkgsFor.${system};
         in {
-          gitle = pkgs.buildGoModule {
+          gitle = pkgs.buildGo123Module {
             pname = "gitle";
-            version = "v1.0.2";
+            version = "v1.0.3";
             src = ./.;
 
             vendorHash = "sha256-6ZrOe2U/YanW9mDRuj9npaYbof0TuzXg11lT3k/Kx7w=";
